@@ -115,6 +115,8 @@ def buildSim(cppFlags, dir, type, pgo=None):
     env["LIBPATH"] = []
     env["LIBS"] = ["config++"]
 
+    env.Append(LIBPATH=["/usr/lib/x86_64-linux-gnu", "/usr/lib/x86_64-linux-gnu/hdf5/serial"]) ##### Thank you ChatGPT lmfao
+
     env["LINKFLAGS"] = ""
     env["RPATH"] = []
 
