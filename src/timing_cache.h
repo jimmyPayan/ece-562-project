@@ -37,7 +37,7 @@ class ReplAccessEvent;
 class TimingEvent;
 
 class TimingCache : public Cache {
-    private:
+    protected:
         uint64_t lastAccCycle, lastFreeCycle;
         uint32_t numMSHRs, activeMisses;
         g_vector<TimingEvent*> pendingQueue;
@@ -68,7 +68,7 @@ class TimingCache : public Cache {
         void simulateMissWriteback(MissWritebackEvent* ev, uint64_t cycle, MissStartEvent* mse);
         void simulateReplAccess(ReplAccessEvent* ev, uint64_t cycle);
 
-    private:
+    protected:
         uint64_t highPrioAccess(uint64_t cycle);
         uint64_t tryLowPrioAccess(uint64_t cycle);
 };
