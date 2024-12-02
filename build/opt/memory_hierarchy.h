@@ -37,7 +37,7 @@
 
 /* Addresses are plain 64-bit uints. This should be kept compatible with PIN addrints */
 typedef uint64_t Address;
-
+typedef void* DataLine;
 /* Types of Access. An Access is a request that proceeds from lower to upper
  * levels of the hierarchy (core->l1->l2, etc.)
  */
@@ -65,10 +65,25 @@ typedef enum {
     M  // exclusive and dirty
 } MESIState;
 
+//typedef enum {
+//    ZSIM_UINT8,
+//    ZSIM_INT8,
+//    ZSIM_UINT16,
+//    ZSIM_INT16,
+//    ZSIM_UINT32,
+//    ZSIM_INT32,
+//    ZSIM_UINT64,
+//    ZSIM_INT64,
+//    ZSIM_FLOAT,
+//    ZSIM_DOUBLE
+//} DataType;
+
 //Convenience methods for clearer debug traces
 const char* AccessTypeName(AccessType t);
 const char* InvTypeName(InvType t);
 const char* MESIStateName(MESIState s);
+// trace thing
+//const char* DataTypeName(DataType t);
 
 inline bool IsGet(AccessType t) { return t == GETS || t == GETX; }
 inline bool IsPut(AccessType t) { return t == PUTS || t == PUTX; }
