@@ -1,9 +1,9 @@
 Running on: ubuntu-bionic
-Start time: Mon Dec  2 21:47:31 2024
-Heartbeat time: Mon Dec  2 21:48:04 2024
+Start time: Mon Dec  2 22:04:56 2024
+Heartbeat time: Mon Dec  2 22:05:28 2024
 Stats since start:
- 1581 phases
- 15810000 cycles
- 479090 cycles/s
-Stats since last heartbeat (4s):
- 50000 cycles/s
+ 1582 phases
+ 15820000 cycles
+ 494375 cycles/s
+Stats since last heartbeat (1s):
+ 0 cycles/s

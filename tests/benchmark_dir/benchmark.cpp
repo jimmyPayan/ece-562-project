@@ -2,13 +2,13 @@
 #include <chrono>
 
 int main() {
-    int a = 10;
-    int b = 20;
-    int sum;
+    uint64_t a = 10;
+    uint64_t b = 20;
+     uint64_t sum;
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    for (int i = 0; i < 1000000; ++i) {
+    for (uint64_t i = 0; i < 1000000; ++i) {
         sum = a + b;
     }
 
@@ -17,5 +17,5 @@ int main() {
 
     std::cout << "Time taken: " << duration.count() << " nanoseconds" << std::endl;
 
-    return 0;
+   return 0;
 }
