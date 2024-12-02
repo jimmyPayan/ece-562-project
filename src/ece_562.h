@@ -61,7 +61,7 @@ class BDI_tagArray {
     protected:
         bool* approximateArray;
         Address* tagArray;
-
+        int32_t* segmentPointerArray;
         
     public:
 };
