@@ -23,6 +23,13 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+/*
+* ECE 562 Project: Cache Compression using Base Delta Immediate algorithm
+* By Luke Dagnillo, Sophia Golota, Jimmy Payan, Cecilia Quevedo 
+*
+* This file is altering "cache_arrays.h" from zsim to support cache compression.
+*/
+
 #ifndef CACHE_ARRAYS_H_
 #define CACHE_ARRAYS_H_
 
@@ -153,5 +160,17 @@ struct ZCands {
     inline iterator end() const {return iterator(e);}
     inline uint32_t numCands() const { return e-b; }
 };
+
+/*
+* Beginning of ECE 562 Implementation
+*/
+
+// class BDI_TagArray {
+// // wtf does this do 
+// };
+
+// class BDI_DataArray {
+// // wtf does this do
+// };
 
 #endif  // CACHE_ARRAYS_H_

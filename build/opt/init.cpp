@@ -24,6 +24,7 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "ece_562.h"
 #include "init.h"
 #include <list>
 #include <sstream>
@@ -230,6 +231,10 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
 
 
     //Alright, build the array
+    // ECE562: CHANGEME
+    BDI_dataArray* eceDataArray = nullptr;
+    eceDataArray = new BDI_dataArray();
+
     CacheArray* array = nullptr;
     if (arrayType == "SetAssoc") {
         array = new SetAssocArray(numLines, ways, rp, hf);
