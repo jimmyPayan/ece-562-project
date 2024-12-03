@@ -31,6 +31,10 @@
 #include "zsim.h"
 #include "pin.H"
 
+#include <iostream>
+#include <fstream>
+#include <iomanip>  // For std::setw and std::setfill
+
 Cache::Cache(uint32_t _numLines, CC* _cc, CacheArray* _array, ReplPolicy* _rp, uint32_t _accLat, uint32_t _invLat, const g_string& _name)
     : cc(_cc), array(_array), rp(_rp), numLines(_numLines), accLat(_accLat), invLat(_invLat), name(_name) {}
 
@@ -65,13 +69,27 @@ uint64_t Cache::access(MemReq& req) {
 	DataLine data = gm_calloc<uint8_t>(zinfo->lineSize);
 //        DataType type = ZSIM_FLOAT; // comment out for now
         PIN_SafeCopy(data, (void*)(req.lineAddr << lineBits), zinfo->lineSize);
-        info("Accessing address: 0x%lx", (req.lineAddr << lineBits));
-        info("line size: %i", (zinfo->lineSize));
+	std::ofstream outputFile("output.txt", std::ios::app); // Create an output file stream
 
+    if (outputFile.is_open()) { // Check if the file opened successfully
+        outputFile << "Accessing address: 0x" << std::hex << (req.lineAddr << lineBits) << std::endl; // Write data to the file
+        outputFile << "line size: " << (zinfo->lineSize) << std::endl;
         uint8_t* byteData = (uint8_t*)data;
         for (size_t i = 0; i < zinfo->lineSize; ++i) {
-                printf("%02x ", byteData[i]);
+                outputFile << std::hex << std::setfill('0') << std::setw(2) << static_cast<int>(byteData[i]) << " ";
         }
+        outputFile << std::endl;  // End the line after the loop
+
+    } else {
+        std::cerr << "Error opening the file!" << std::endl;
+    }
+//        info("Accessing address: 0x%lx", (req.lineAddr << lineBits));
+//        info("line size: %i", (zinfo->lineSize));
+
+//        uint8_t* byteData = (uint8_t*)data;
+//        for (size_t i = 0; i < zinfo->lineSize; ++i) {
+//                printf("%02x ", byteData[i]);
+//        }
 
 	
 	uint64_t respCycle = req.cycle;
