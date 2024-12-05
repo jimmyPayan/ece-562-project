@@ -8,8 +8,8 @@ int main() {
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    for (int i = 0; i < 1000000; ++i) {
-        sum = a + b;
+    for (int i = 1; i < 5; ++i) {
+        sum = 0xAAAAAAAA;
     }
 
     auto end = std::chrono::high_resolution_clock::now();

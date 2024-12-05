@@ -15,7 +15,7 @@
 typedef int64_t DataType;
 typedef void*   DataLine;
 
-class BDI_Cache : public TimingCache {
+class ece562_BDICache : public TimingCache {
     protected:
         uint32_t numTagLines;
         uint32_t numDataLines;
@@ -47,7 +47,7 @@ class BDI_Cache : public TimingCache {
     // protected:
     //     void initCacheStats(AggregateStat* cacheStat);
 
-class BDI_dataArray {
+class ece562_BDIDataArray {
     protected:
         // uint64_t my_llabs(int64_t x);
         // uint8_t multiBaseCompression(uint64_t* values, uint8_t size, uint8_t blimit, uint8_t bsize);
@@ -57,7 +57,7 @@ class BDI_dataArray {
         void approximate(const DataLine data, DataType type);
 };
 
-class BDI_tagArray {
+class ece562_BDITagArray {
     protected:
         bool* approximateArray;
         Address* tagArray;
