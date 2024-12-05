@@ -3,14 +3,18 @@
 * By Luke Dagnillo, Sophia Golota, Jimmy Payan, Cecilia Quevedo 
 *
 * This file stores declarations for the new objects needed to implement cache compression.
+*
+* Rather than add to many different zSim header files (like Thesaurus did), it seems like a better 
+* idea to add all custom-made objects to this header and associated .cpp file
 */
 
-#ifndef ECE_562_BDI_CACHE_
-#define ECE_562_BDI_CACHE_
+#ifndef ECE_562
+#define ECE_562
 
 #include "breakdown_stats.h"
 #include "cache.h"
-#include "timing_cache.h" // Added by JP
+#include "timing_cache.h"
+#include "repl_policies.h"
 
 typedef int64_t DataType;
 typedef void*   DataLine;
@@ -27,7 +31,7 @@ class ece562_BDICache : public TimingCache {
     // ReplPolicy* dataRP;
     
     public:
-        // BDI_Cache(uint32_t _numTagLines, uint32_t _numDataLines, CC* cc, BDI_tagArray* _tagArray, BDI_dataArray* _dataArray,
+        // ece562_BDICache(uint32_t _numTagLines, uint32_t _numDataLines, CC* cc, ece562_BDITagArray* _tagArray, ece562_BDIDataArray* _dataArray,
         // ReplPolicy* tagRP, ReplPolicy* dataRP, uint32_t _accLat, uint32_t _invLat, uint32_t mshrs, uint32_t ways, 
         // uint32_t cands, uint32_t _domain, const g_string& _name);
 
@@ -103,4 +107,33 @@ class ece562_BDITagArray {
 //         void initStats(AggregateStat* parent) {}
 //         void print();
 // };
-#endif  // ECE_562_BDI_CACHE_
+
+
+
+// Trying to explain what TagRatio does
+#if 0
+tagRP = new LRUReplPolicy<true>(numLines*tagRatio);
+#endif
+/*
+* TagRP is initialized to be an LRUReplPolicy object, which accepts "numLines * TagRatio" as its argument.
+* This may correspond to the max compression ratio? If that is true, since we have 8DELTA1 compression, we would have a TagRatio of 4.
+* CMU paper should talk about this, I think it deals with the idea that you need additional pointers to index condensed cachelines.
+* If these interpretations are correct (I think they are), then doing 8DELTA0 (cacheline has identical elements) would require TagRatio of 8.
+* Even worse, 0-compression would require a TagRatio of 64, unless we handle it as an edge case.
+*/
+
+// ReplPolicy in Thesaurus is pulled from an old version of zSim which has a virtual rank function defined in LegacyReplPolicy (likely removed b/c legacy)
+# if 0
+uint32_t rank(const MemReq* req, SetAssocCands cands, g_vector<uint32_t>& exceptions) {panic("No"); return 0;}
+#endif
+
+/*
+* TODO: Find out and explain exactly why we need DataLRUReplPolicy
+* Mostly the same as LRUReplPolicy, but features an added "valid" bool pointer and proper valid assignments,
+* as well as an overloaded ? "rank" function. 
+*/
+class ece562_DataLRUReplPolicy : public ReplPolicy {
+
+};
+
+#endif  // ECE_562
