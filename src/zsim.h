@@ -32,6 +32,7 @@
 #include "debug.h"
 #include "locks.h"
 #include "pad.h"
+#include <string>
 
 class Core;
 class Scheduler;
@@ -72,10 +73,15 @@ enum ProcExitStatus {
     PROC_RESTARTME  = 2
 };
 
+enum{
+
+};
+
 struct GlobSimInfo {
     //System configuration values, all read-only, set at initialization
     uint32_t numCores;
     uint32_t lineSize;
+
 
     //Cores
     Core** cores;
