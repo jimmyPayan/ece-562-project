@@ -239,6 +239,7 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
     //ece562_BDITagArray* tagArray = nullptr;
     //ReplPolicy* tagRP = nullptr;
     //ReplPolicy* dataRP = nullptr;
+
     uint32_t tagRatio = config.get<uint32_t>(prefix + "tagRatio", 1);
 
     if (arrayType == "ece562_BDI") {
