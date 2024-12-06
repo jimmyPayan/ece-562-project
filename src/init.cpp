@@ -24,7 +24,6 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ece_562.h"
 #include "init.h"
 #include <list>
 #include <sstream>
@@ -43,6 +42,8 @@
 #include "ddr_mem.h"
 #include "debug_zsim.h"
 #include "dramsim_mem_ctrl.h"
+//ours
+#include "ece_562.h"
 #include "event_queue.h"
 #include "filter_cache.h"
 #include "galloc.h"
@@ -105,7 +106,7 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
     uint32_t candidates = (arrayType == "Z")? config.get<uint32_t>(prefix + "array.candidates", 16) : ways;
 
     //Need to know number of hash functions before instantiating array
-    if (arrayType == "SetAssoc") {
+    if (arrayType == "SetAssoc" || arrayType == "ece562_BDI") {
         numHashes = 1;
     } else if (arrayType == "Z") {
         numHashes = ways;
@@ -118,7 +119,7 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
     }
 
     // Power of two sets check; also compute setBits, will be useful later
-    uint32_t numSets = numLines/ways;
+    uint32_t numSets = numLines / ways;
     uint32_t setBits = 31 - __builtin_clz(numSets);
     if ((1u << setBits) != numSets) panic("%s: Number of sets must be a power of two (you specified %d sets)", name.c_str(), numSets);
 
@@ -231,12 +232,23 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
 
 
     //Alright, build the array
-    // ECE562: CHANGEME
-    BDI_dataArray* eceDataArray = nullptr;
-    eceDataArray = new BDI_dataArray();
-
     CacheArray* array = nullptr;
-    if (arrayType == "SetAssoc") {
+
+    //added from Thesaurus init.cpp
+    //ece562_BDIDataArray* dataArray = nullptr;
+    //ece562_BDITagArray* tagArray = nullptr;
+    //ReplPolicy* tagRP = nullptr;
+    //ReplPolicy* dataRP = nullptr;
+    uint32_t tagRatio = config.get<uint32_t>(prefix + "tagRatio", 1);
+
+    if (arrayType == "ece562_BDI") {
+        //tagRP = new LRUReplPolicy<true>(numLines * tagRatio);
+        //dataRP = new DataLRUReplPolicy(numLines);
+        //dataRP = new LRUReplPolicy<true>(numLines);
+        //tagArray = new ece562_BDITagArray(numLines * tagRatio, ways * tagRatio, ways, tagRP, hf);
+        //dataArray = new ece562_BDIDataArray();
+    }
+    else if (arrayType == "SetAssoc") {
         array = new SetAssocArray(numLines, ways, rp, hf);
     } else if (arrayType == "Z") {
         array = new ZArray(numLines, ways, candidates, rp, hf);
@@ -262,7 +274,7 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
 
     // Inclusion?
     bool nonInclusiveHack = config.get<bool>(prefix + "nonInclusiveHack", false);
-    if (nonInclusiveHack) assert((type == "Simple" || type == "BDI") && !isTerminal);
+    if (nonInclusiveHack) assert((type == "Simple" || type == "ece562_BDI") && !isTerminal);
 
     // Finally, build the cache
     Cache* cache;
@@ -274,7 +286,7 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
     }
     rp->setCC(cc);
     if (!isTerminal) {
-        if (type == "Simple" || type == "BDI") {
+        if (type == "Simple" || type == "ece562_BDI") {
             cache = new Cache(numLines, cc, array, rp, accLat, invLat, name);
         } else if (type == "Timing") {
             uint32_t mshrs = config.get<uint32_t>(prefix + "mshrs", 16);
@@ -290,10 +302,22 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
         }
     } else {
         //Filter cache optimization: FIXME ECE
-        if (type != "Simple" && type != "BDI") panic("Terminal cache %s can only have type == Simple || BDI", name.c_str());
+        if (type != "Simple" && type != "ece562_BDI") panic("Terminal cache %s can only have type == Simple || ece562_BDI", name.c_str());
         if (arrayType != "SetAssoc" || hashType != "None" || replType != "LRU") panic("Invalid FilterCache config %s", name.c_str());
         cache = new FilterCache(numSets, numLines, cc, array, rp, accLat, invLat, name);
     }
+
+    //also from Thesaurus init.cpp
+    //cache = new ApproximateBDICache(numLines * tagRatio, numLines, cc, atagArray, adataArray, tagRP, dataRP,
+    //    accLat, invLat, mshrs, ways, timingCandidates, domain, name, crStats, evStats, tutStats, dutStats, hitStats, missStats, allStats);
+    /*zinfo->compressionRatioStats->push_back(crStats);
+    zinfo->evictionStats->push_back(evStats);
+    zinfo->tagUtilizationStats->push_back(tutStats);
+    zinfo->dataUtilizationStats->push_back(dutStats);
+    zinfo->tagHitStats->push_back(hitStats);
+    zinfo->tagMissStats->push_back(missStats);
+    zinfo->tagAllStats->push_back(allStats);
+    zinfo->L3Cache->push_back(cache);*/
 
 #if 0
     info("Built L%d bank, %d bytes, %d lines, %d ways (%d candidates if array is Z), %s array, %s hash, %s replacement, accLat %d, invLat %d name %s",
@@ -336,7 +360,7 @@ MemObject* BuildMemoryController(Config& config, uint32_t lineSize, uint32_t fre
     uint32_t latency = (type == "DDR")? -1 : config.get<uint32_t>("sys.mem.latency", 100);
 
     MemObject* mem = nullptr;
-    if (type == "Simple" || type == "BDI"){
+    if (type == "Simple" || type == "ece562_BDI"){
         mem = new SimpleMemory(latency, name);
     } else if (type == "MD1") {
         // The following params are for MD1 only
@@ -638,7 +662,7 @@ static void InitSystem(Config& config) {
                 OOOCore* oooCores;
                 NullCore* nullCores;
             };
-            if (type == "Simple" || type == "BDI") {
+            if (type == "Simple" || type == "ece562_BDI") {
                 simpleCores = gm_memalign<SimpleCore>(CACHE_LINE_BYTES, cores);
             } else if (type == "Timing") {
                 timingCores = gm_memalign<TimingCore>(CACHE_LINE_BYTES, cores);
@@ -686,7 +710,7 @@ static void InitSystem(Config& config) {
                     assignedCaches[dcache]++;
 
                     //Build the core
-                    if (type == "Simple" || type == "BDI") {
+                    if (type == "Simple" || type == "ece562_BDI") {
                         core = new (&simpleCores[j]) SimpleCore(ic, dc, name);
                     } else if (type == "Timing") {
                         uint32_t domain = j*zinfo->numDomains/cores;
