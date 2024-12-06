@@ -30,6 +30,11 @@
 #include "timing_event.h"
 #include "zsim.h"
 #include "pin.H"
+<<<<<<< HEAD
+=======
+#include "ece_562.h"
+
+>>>>>>> sg-changes
 
 #include <iostream>
 #include <fstream>
@@ -70,6 +75,7 @@ void Cache::initCacheStats(AggregateStat* cacheStat) {
 // but don't want to set that in here otherwise it will create a file everytime this is called/accessed :'(
 
 uint64_t Cache::access(MemReq& req) {
+<<<<<<< HEAD
     	
 	// allocating space in memory for data. the data will be the size of the line size
 	DataLine data = gm_calloc<uint8_t>(zinfo->lineSize);
@@ -101,6 +107,40 @@ uint64_t Cache::access(MemReq& req) {
     }
 
 	uint64_t respCycle = req.cycle;
+=======
+
+    // allocating space in memory for data. the data will be the size of the line size
+    DataLine data = gm_calloc<uint8_t>(zinfo->lineSize);
+    //        DataType type = ZSIM_FLOAT; // comment out for now
+    PIN_SafeCopy(data, (void*)(req.lineAddr << lineBits), zinfo->lineSize);
+
+    // making the file. nameing it too and making it so it can keep being written to.
+    std::ofstream outputFile("cache_access_output.txt", std::ios::app); // Create an output file stream
+
+    if (outputFile.is_open()) { // Check if the file opened successfully
+
+    // this line is outputing the line address in hex.0x is just so it has that before the hex number
+    // std: hex is what is putting it in hex.
+        outputFile << "Accessing address: 0x" << std::hex << (req.lineAddr << lineBits) << std::endl; // Write data to the file
+
+    // this is outputing the line size. no manipulation of it. just line size.
+        outputFile << "line size: " << (zinfo->lineSize) << std::endl;
+
+        // this is making a byte data array. basically, taking the existing data
+        uint8_t* byteData = (uint8_t*)data;
+        for (size_t i = 0; i < zinfo->lineSize; ++i) {
+            // writing it out in hex.
+            outputFile << std::hex << std::setfill('0') << std::setw(2) << static_cast<int>(byteData[i]) << " ";
+        }
+        outputFile << std::endl;  // End the line after the loop
+
+    }
+    else {
+        std::cerr << "Error opening the file!" << std::endl;
+    }
+
+    uint64_t respCycle = req.cycle;
+>>>>>>> sg-changes
     bool skipAccess = cc->startAccess(req); //may need to skip access due to races (NOTE: may change req.type!)
     if (likely(!skipAccess)) {
         bool updateReplacement = (req.type == GETS) || (req.type == GETX);
