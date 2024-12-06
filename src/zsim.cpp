@@ -98,7 +98,6 @@ INT32 Usage() {
 GlobSimInfo* zinfo;
 
 /* Per-process variables */
-
 uint32_t procIdx;
 uint32_t lineBits; //process-local for performance, but logically global
 Address procMask;
@@ -190,7 +189,6 @@ VOID PIN_FAST_ANALYSIS_CALL IndirectPredLoadSingle(THREADID tid, ADDRINT addr, B
 VOID PIN_FAST_ANALYSIS_CALL IndirectPredStoreSingle(THREADID tid, ADDRINT addr, BOOL pred) {
     fPtrs[tid].predStorePtr(tid, addr, pred);
 }
-
 
 //Non-simulation variants of analysis functions
 
@@ -305,6 +303,7 @@ VOID FFITrackNFFInterval() {
 
     ffiNFF = true;
 }
+
 
 // Called on process start
 VOID FFIInit() {

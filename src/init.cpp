@@ -76,6 +76,9 @@
 #include "weave_md1_mem.h" //validation, could be taken out...
 #include "zsim.h"
 
+#include <random>
+#include <sstream>
+
 extern void EndOfPhaseActions(); //in zsim.cpp
 
 /* zsim should be initialized in a deterministic and logical order, to avoid re-reading config vars
@@ -1021,12 +1024,12 @@ void SimInit(const char* configFile, const char* outputDir, uint32_t shmid) {
     //Write config out
     bool strictConfig = config.get<bool>("sim.strictConfig", true); //if true, panic on unused variables
     config.writeAndClose((string(zinfo->outputDir) + "/out.cfg").c_str(), strictConfig);
-
     zinfo->contentionSim->postInit();
 
     info("Initialization complete");
 
     //Causes every other process to wake up
     gm_set_glob_ptr(zinfo);
+
 }
 
