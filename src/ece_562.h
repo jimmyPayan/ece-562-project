@@ -3,19 +3,33 @@
 * By Luke Dagnillo, Sophia Golota, Jimmy Payan, Cecilia Quevedo 
 *
 * This file stores declarations for the new objects needed to implement cache compression.
+*
+* Rather than add to many different zSim header files (like Thesaurus did), it seems like a better 
+* idea to add all custom-made objects to this header and associated .cpp file
 */
 
-#ifndef ECE_562_BDI_CACHE_
-#define ECE_562_BDI_CACHE_
+#ifndef ECE_562
+#define ECE_562
 
 #include "breakdown_stats.h"
 #include "cache.h"
-#include "timing_cache.h" // Added by JP
+#include "timing_cache.h"
+#include "repl_policies.h"
 
 typedef int64_t DataType;
 typedef void*   DataLine;
 
-class BDI_Cache : public TimingCache {
+typedef enum {
+    ZERO,
+    DELTA0,
+    DELTA1,
+    DELTA2,
+    DELTA3,
+    UNCOMPRESSED,
+} ece562_BDICompressionEncoding;
+
+
+class ece562_BDICache : public TimingCache {
     protected:
         uint32_t numTagLines;
         uint32_t numDataLines;
@@ -27,7 +41,7 @@ class BDI_Cache : public TimingCache {
     // ReplPolicy* dataRP;
     
     public:
-        // BDI_Cache(uint32_t _numTagLines, uint32_t _numDataLines, CC* cc, BDI_tagArray* _tagArray, BDI_dataArray* _dataArray,
+        // ece562_BDICache(uint32_t _numTagLines, uint32_t _numDataLines, CC* cc, ece562_BDITagArray* _tagArray, ece562_BDIDataArray* _dataArray,
         // ReplPolicy* tagRP, ReplPolicy* dataRP, uint32_t _accLat, uint32_t _invLat, uint32_t mshrs, uint32_t ways, 
         // uint32_t cands, uint32_t _domain, const g_string& _name);
 
@@ -37,17 +51,14 @@ class BDI_Cache : public TimingCache {
     // public:
     //     ApproximateBDICache(uint32_t _numTagLines, uint32_t _numDataLines, CC* _cc, ApproximateBDITagArray* _tagArray, ApproximateBDIDataArray* _dataArray, ReplPolicy* tagRP, ReplPolicy* dataRP, uint32_t _accLat, uint32_t _invLat,
     //                     uint32_t mshrs, uint32_t ways, uint32_t cands, uint32_t _domain, const g_string& _name, RunningStats* _crStats, RunningStats* _evStats, RunningStats* _tutStats, RunningStats* _dutStats, Counter* _tag_hits, Counter* _tag_misses, Counter* _tag_all);
-
     //     uint64_t access(MemReq& req);
     //     void dumpStats();
-
     //     void initStats(AggregateStat* parentStat);
     //     void simulateHitWriteback(aHitWritebackEvent* ev, uint64_t cycle, HitEvent* he);
-
     // protected:
     //     void initCacheStats(AggregateStat* cacheStat);
 
-class BDI_dataArray {
+class ece562_BDIDataArray {
     protected:
         // uint64_t my_llabs(int64_t x);
         // uint8_t multiBaseCompression(uint64_t* values, uint8_t size, uint8_t blimit, uint8_t bsize);
@@ -57,13 +68,25 @@ class BDI_dataArray {
         void approximate(const DataLine data, DataType type);
 };
 
-class BDI_tagArray {
+class ece562_BDITagArray {
     protected:
         bool* approximateArray;
         Address* tagArray;
-
-        
+        int32_t* segmentPointerArray;
+        ece562_BDICompressionEncoding compressionEncodingArray;
+        ReplPolicy* tagRP;
+        // HashFamily* hf;
+        uint32_t numLines;
+        uint32_t numSets;
+        uint32_t associativity; //?
+        uint32_t dataAssociativity;
+        uint32_t numValidLines;
+        uint32_t numDataValidSegments;
     public:
+        // constructor probably won't work yet.
+        ece562_BDITagArray(uint32_t _numLines, uint32_t _assoc, uint32_t _dataAssoc, ReplPolicy* _rp, HashFamily* _hf);
+        ~ece562_BDITagArray();
+
 };
 // class ApproximateBDITagArray {
 //     protected:
@@ -103,4 +126,33 @@ class BDI_tagArray {
 //         void initStats(AggregateStat* parent) {}
 //         void print();
 // };
-#endif  // ECE_562_BDI_CACHE_
+
+
+
+// Trying to explain what TagRatio does
+#if 0
+tagRP = new LRUReplPolicy<true>(numLines*tagRatio);
+#endif
+/*
+* TagRP is initialized to be an LRUReplPolicy object, which accepts "numLines * TagRatio" as its argument.
+* This may correspond to the max compression ratio? If that is true, since we have 8DELTA1 compression, we would have a TagRatio of 4.
+* CMU paper should talk about this, I think it deals with the idea that you need additional pointers to index condensed cachelines.
+* If these interpretations are correct (I think they are), then doing 8DELTA0 (cacheline has identical elements) would require TagRatio of 8.
+* Even worse, 0-compression would require a TagRatio of 64, unless we handle it as an edge case.
+*/
+
+// ReplPolicy in Thesaurus is pulled from an old version of zSim which has a virtual rank function defined in LegacyReplPolicy (likely removed b/c legacy)
+# if 0
+uint32_t rank(const MemReq* req, SetAssocCands cands, g_vector<uint32_t>& exceptions) {panic("No"); return 0;}
+#endif
+
+/*
+* TODO: Find out and explain exactly why we need DataLRUReplPolicy
+* Mostly the same as LRUReplPolicy, but features an added "valid" bool pointer and proper valid assignments,
+* as well as an overloaded ? "rank" function. 
+*/
+class ece562_DataLRUReplPolicy : public ReplPolicy {
+
+};
+
+#endif  // ECE_562

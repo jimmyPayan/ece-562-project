@@ -1,0 +1,11 @@
+.vscode/
+/build/opt
+.sconsign.dblite
+heartbeat
+.sconsign.dblite
+out.cfg
+zsim-cmp.h5
+zsim-ev.h5
+zsim.h5
+zsim.out
+

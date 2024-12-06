@@ -235,8 +235,8 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
 
     //Alright, build the array
     // ECE562: CHANGEME
-    BDI_dataArray* eceDataArray = nullptr;
-    eceDataArray = new BDI_dataArray();
+    ece562_BDIDataArray* ece562_dataArray = nullptr;
+    ece562_dataArray = new ece562_BDIDataArray();
 
     CacheArray* array = nullptr;
     if (arrayType == "SetAssoc") {
@@ -265,7 +265,7 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
 
     // Inclusion?
     bool nonInclusiveHack = config.get<bool>(prefix + "nonInclusiveHack", false);
-    if (nonInclusiveHack) assert(type == "Simple" && !isTerminal);
+    if (nonInclusiveHack) assert((type == "Simple" || type == "ece562_BDI") && !isTerminal);
 
     // Finally, build the cache
     Cache* cache;
@@ -277,7 +277,7 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
     }
     rp->setCC(cc);
     if (!isTerminal) {
-        if (type == "Simple") {
+        if (type == "Simple" || type == "ece562_BDI") {
             cache = new Cache(numLines, cc, array, rp, accLat, invLat, name);
         } else if (type == "Timing") {
             uint32_t mshrs = config.get<uint32_t>(prefix + "mshrs", 16);
@@ -292,8 +292,8 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
             panic("Invalid cache type %s", type.c_str());
         }
     } else {
-        //Filter cache optimization
-        if (type != "Simple") panic("Terminal cache %s can only have type == Simple", name.c_str());
+        //Filter cache optimization: FIXME ECE
+        if (type != "Simple" && type != "ece562_BDI") panic("Terminal cache %s can only have type == Simple || BDI", name.c_str());
         if (arrayType != "SetAssoc" || hashType != "None" || replType != "LRU") panic("Invalid FilterCache config %s", name.c_str());
         cache = new FilterCache(numSets, numLines, cc, array, rp, accLat, invLat, name);
     }
@@ -333,13 +333,13 @@ DDRMemory* BuildDDRMemory(Config& config, uint32_t lineSize, uint32_t frequency,
 
 MemObject* BuildMemoryController(Config& config, uint32_t lineSize, uint32_t frequency, uint32_t domain, g_string& name) {
     //Type
-    string type = config.get<const char*>("sys.mem.type", "Simple");
+    string type = config.get<const char*>("sys.mem.type", "Simple"); // ECE FIXME
 
     //Latency
     uint32_t latency = (type == "DDR")? -1 : config.get<uint32_t>("sys.mem.latency", 100);
 
     MemObject* mem = nullptr;
-    if (type == "Simple") {
+    if (type == "Simple" || type == "ece562_BDI"){
         mem = new SimpleMemory(latency, name);
     } else if (type == "MD1") {
         // The following params are for MD1 only
@@ -632,7 +632,7 @@ static void InitSystem(Config& config) {
 
             string prefix = string("sys.cores.") + group + ".";
             uint32_t cores = config.get<uint32_t>(prefix + "cores", 1);
-            string type = config.get<const char*>(prefix + "type", "Simple");
+            string type = config.get<const char*>(prefix + "type", "Simple"); //ECE FIXME
 
             //Build the core group
             union {
@@ -641,7 +641,7 @@ static void InitSystem(Config& config) {
                 OOOCore* oooCores;
                 NullCore* nullCores;
             };
-            if (type == "Simple") {
+            if (type == "Simple" || type == "ece562_BDI") {
                 simpleCores = gm_memalign<SimpleCore>(CACHE_LINE_BYTES, cores);
             } else if (type == "Timing") {
                 timingCores = gm_memalign<TimingCore>(CACHE_LINE_BYTES, cores);
@@ -689,7 +689,7 @@ static void InitSystem(Config& config) {
                     assignedCaches[dcache]++;
 
                     //Build the core
-                    if (type == "Simple") {
+                    if (type == "Simple" || type == "ece562_BDI") {
                         core = new (&simpleCores[j]) SimpleCore(ic, dc, name);
                     } else if (type == "Timing") {
                         uint32_t domain = j*zinfo->numDomains/cores;
