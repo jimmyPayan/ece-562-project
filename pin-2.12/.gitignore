@@ -1,0 +1,13 @@
+# Compiled Object files
+source/tools/*.slo
+source/tools/*.lo
+source/tools/*.o
+
+# Compiled Dynamic libraries
+source/tools/*.so
+source/tools/*.dylib
+
+# Compiled Static libraries
+source/tools/*.lai
+source/tools/*.la
+source/tools/*.a
