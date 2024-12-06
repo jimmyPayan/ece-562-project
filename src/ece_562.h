@@ -19,6 +19,16 @@
 typedef int64_t DataType;
 typedef void*   DataLine;
 
+typedef enum {
+    ZERO,
+    DELTA0,
+    DELTA1,
+    DELTA2,
+    DELTA3,
+    UNCOMPRESSED,
+} ece562_BDICompressionEncoding;
+
+
 class ece562_BDICache : public TimingCache {
     protected:
         uint32_t numTagLines;
@@ -41,13 +51,10 @@ class ece562_BDICache : public TimingCache {
     // public:
     //     ApproximateBDICache(uint32_t _numTagLines, uint32_t _numDataLines, CC* _cc, ApproximateBDITagArray* _tagArray, ApproximateBDIDataArray* _dataArray, ReplPolicy* tagRP, ReplPolicy* dataRP, uint32_t _accLat, uint32_t _invLat,
     //                     uint32_t mshrs, uint32_t ways, uint32_t cands, uint32_t _domain, const g_string& _name, RunningStats* _crStats, RunningStats* _evStats, RunningStats* _tutStats, RunningStats* _dutStats, Counter* _tag_hits, Counter* _tag_misses, Counter* _tag_all);
-
     //     uint64_t access(MemReq& req);
     //     void dumpStats();
-
     //     void initStats(AggregateStat* parentStat);
     //     void simulateHitWriteback(aHitWritebackEvent* ev, uint64_t cycle, HitEvent* he);
-
     // protected:
     //     void initCacheStats(AggregateStat* cacheStat);
 
@@ -66,8 +73,20 @@ class ece562_BDITagArray {
         bool* approximateArray;
         Address* tagArray;
         int32_t* segmentPointerArray;
-        
+        ece562_BDICompressionEncoding compressionEncodingArray;
+        ReplPolicy* tagRP;
+        // HashFamily* hf;
+        uint32_t numLines;
+        uint32_t numSets;
+        uint32_t associativity; //?
+        uint32_t dataAssociativity;
+        uint32_t numValidLines;
+        uint32_t numDataValidSegments;
     public:
+        // constructor probably won't work yet.
+        ece562_BDITagArray(uint32_t _numLines, uint32_t _assoc, uint32_t _dataAssoc, ReplPolicy* _rp, HashFamily* _hf);
+        ~ece562_BDITagArray();
+
 };
 // class ApproximateBDITagArray {
 //     protected:
