@@ -1,3 +1,5 @@
+cache_access_output.txt
+pin.log
 .vscode/
 /build/opt
 .sconsign.dblite
