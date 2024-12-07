@@ -75,7 +75,7 @@ uint64_t Cache::access(MemReq& req) {
 
     // allocating space in memory for data. the data will be the size of the line size
     DataLine data = gm_calloc<uint8_t>(zinfo->lineSize);
-    //        DataType type = ZSIM_FLOAT; // comment out for now
+    //        DataType type = ZSIM_FLOAT; // comment out for now; only using 64-bit ints
     PIN_SafeCopy(data, (void*)(req.lineAddr << lineBits), zinfo->lineSize);
 
     // making the file. nameing it too and making it so it can keep being written to.
@@ -83,7 +83,7 @@ uint64_t Cache::access(MemReq& req) {
 
     if (outputFile.is_open()) { // Check if the file opened successfully
 
-    // this line is outputing the line address in hex.0x is just so it has that before the hex number
+    // this line is outputing the line address in hex. 0x is just so it has that before the hex number
     // std: hex is what is putting it in hex.
         outputFile << "Accessing address: 0x" << std::hex << (req.lineAddr << lineBits) << std::endl; // Write data to the file
 

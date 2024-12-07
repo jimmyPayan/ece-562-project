@@ -5,11 +5,12 @@
 
 #include <iostream>
 #include <chrono>
+#include <cstdint>
 
 int main() {
-    int a = 10;
-    int b = 20;
-    int sum;
+    int64_t a = 10;
+    int64_t b = 20;
+    int64_t sum;
 
     auto start = std::chrono::high_resolution_clock::now();
 
