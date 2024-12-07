@@ -94,14 +94,11 @@ class ece562_BDICache : public TimingCache {
         ReplPolicy* dataRP;
     
     public:
-        // ece562_BDICache(uint32_t _numTagLines, uint32_t _numDataLines, CC* cc, ece562_BDITagArray* _tagArray, ece562_BDIDataArray* _dataArray,
-        // ReplPolicy* tagRP, ReplPolicy* dataRP, uint32_t _accLat, uint32_t _invLat, uint32_t mshrs, uint32_t ways, 
-        // uint32_t cands, uint32_t _domain, const g_string& _name);
-
         uint64_t access(MemReq& req);
 
-        ece562_BDICache(uint32_t _numTagLines, uint32_t _numDataLines, CC* _cc, ece562_BDITagArray* _tagArray, ece562_BDIDataArray* _dataArray, ReplPolicy* tagRP, ReplPolicy* dataRP,
-            uint32_t _accLat, uint32_t _invLat, uint32_t mshrs, uint32_t ways, uint32_t cands, uint32_t _domain, const g_string& _name);
+        ece562_BDICache(uint32_t _numTagLines, uint32_t _numDataLines, CC* _cc, ece562_BDITagArray* _tagArray, ece562_BDIDataArray* _dataArray, ReplPolicy* tagRP,
+            ReplPolicy* dataRP, uint32_t _accLat, uint32_t _invLat, uint32_t mshrs, uint32_t ways, uint32_t cands, uint32_t _domain, const g_string& _name)
+            : TimingCache(_numTagLines, _cc, NULL, tagRP, _accLat, _invLat, mshrs, tagLat, ways, cands, _domain, _name), numDataLines(_numDataLines), dataRP(dataRP), tagArray(_tagArray), dataArray(_dataArray) {}
 
         void dumpStats();
 

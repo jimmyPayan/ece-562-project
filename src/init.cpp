@@ -290,6 +290,9 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
     }
     rp->setCC(cc);
     if (!isTerminal) {
+        // if (type == "ece562_BDI") {
+        //     cache = new ece562_BDICache();
+        // }
         if (type == "Simple" || type == "ece562_BDI") {
             cache = new Cache(numLines, cc, array, rp, accLat, invLat, name);
         } else if (type == "Timing") {
