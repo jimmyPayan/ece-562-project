@@ -88,7 +88,7 @@ extern void EndOfPhaseActions(); //in zsim.cpp
  */
 
 BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, uint32_t bankSize, bool isTerminal, uint32_t domain) {
-    string type = config.get<const char*>(prefix + "type", "Simple");
+    string type = config.get<const char*>(prefix + "type", "BDI");
     // Shortcut for TraceDriven type
     if (type == "TraceDriven") {
         assert(zinfo->traceDriven);
@@ -109,7 +109,7 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
     uint32_t candidates = (arrayType == "Z")? config.get<uint32_t>(prefix + "array.candidates", 16) : ways;
 
     //Need to know number of hash functions before instantiating array
-    if (arrayType == "SetAssoc" || arrayType == "ece562_BDI") {
+    if (arrayType == "SetAssoc" || arrayType == "BDI") {
         numHashes = 1;
     } else if (arrayType == "Z") {
         numHashes = ways;
@@ -245,11 +245,11 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
 
     uint32_t tagRatio = config.get<uint32_t>(prefix + "tagRatio", 1);
 
-    if (arrayType == "ece562_BDI") {
+    if (arrayType == "BDI") {
         tagRP = new LRUReplPolicy<true>(numLines * tagRatio);
         //dataRP = new DataLRUReplPolicy(numLines);
         dataRP = new LRUReplPolicy<true>(numLines);
-        //tagArray = new ece562_BDITagArray(numLines * tagRatio, ways * tagRatio, ways, tagRP, hf);
+        //tagArray = new BDITagArray(numLines * tagRatio, ways * tagRatio, ways, tagRP, hf);
         dataArray = new ece562_BDIDataArray();
     }
     else if (arrayType == "SetAssoc") {
@@ -278,7 +278,7 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
 
     // Inclusion?
     bool nonInclusiveHack = config.get<bool>(prefix + "nonInclusiveHack", false);
-    if (nonInclusiveHack) assert((type == "Simple" || type == "ece562_BDI") && !isTerminal);
+    if (nonInclusiveHack) assert((type == "Simple" || type == "BDI") && !isTerminal);
 
     // Finally, build the cache
     Cache* cache;
@@ -290,12 +290,13 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
     }
     rp->setCC(cc);
     if (!isTerminal) {
-        // if (type == "ece562_BDI") {
-        //     cache = new ece562_BDICache();
-        // }
-        if (type == "Simple" || type == "ece562_BDI") {
-            cache = new Cache(numLines, cc, array, rp, accLat, invLat, name);
-        } else if (type == "Timing") {
+        if (type == "BDI") {
+            cache = new ece562_SimpleBDICache(numLines, cc, array, rp, accLat, invLat, name);
+            //cache = new Cache(numLines, cc, array, rp, accLat, invLat, name);
+
+        //}else if (type == "Simple") {
+        //    cache = new Cache(numLines, cc, array, rp, accLat, invLat, name);
+        }else if (type == "Timing") {
             uint32_t mshrs = config.get<uint32_t>(prefix + "mshrs", 16);
             uint32_t tagLat = config.get<uint32_t>(prefix + "tagLat", 5);
             uint32_t timingCandidates = config.get<uint32_t>(prefix + "timingCandidates", candidates);
@@ -309,7 +310,7 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
         }
     } else {
         //Filter cache optimization: FIXME ECE
-        if (type != "Simple" && type != "ece562_BDI") panic("Terminal cache %s can only have type == Simple || ece562_BDI", name.c_str());
+        if (type != "Simple" && type != "BDI") panic("Terminal cache %s can only have type == Simple || BDI", name.c_str());
         if (arrayType != "SetAssoc" || hashType != "None" || replType != "LRU") panic("Invalid FilterCache config %s", name.c_str());
         cache = new FilterCache(numSets, numLines, cc, array, rp, accLat, invLat, name);
     }
@@ -367,7 +368,7 @@ MemObject* BuildMemoryController(Config& config, uint32_t lineSize, uint32_t fre
     uint32_t latency = (type == "DDR")? -1 : config.get<uint32_t>("sys.mem.latency", 100);
 
     MemObject* mem = nullptr;
-    if (type == "Simple" || type == "ece562_BDI"){
+    if (type == "Simple" || type == "BDI"){
         mem = new SimpleMemory(latency, name);
     } else if (type == "MD1") {
         // The following params are for MD1 only
@@ -660,7 +661,7 @@ static void InitSystem(Config& config) {
 
             string prefix = string("sys.cores.") + group + ".";
             uint32_t cores = config.get<uint32_t>(prefix + "cores", 1);
-            string type = config.get<const char*>(prefix + "type", "Simple"); //ECE FIXME
+            string type = config.get<const char*>(prefix + "type", "BDI"); //ECE FIXME
 
             //Build the core group
             union {
@@ -669,7 +670,7 @@ static void InitSystem(Config& config) {
                 OOOCore* oooCores;
                 NullCore* nullCores;
             };
-            if (type == "Simple" || type == "ece562_BDI") {
+            if (type == "Simple" || type == "BDI") {
                 simpleCores = gm_memalign<SimpleCore>(CACHE_LINE_BYTES, cores);
             } else if (type == "Timing") {
                 timingCores = gm_memalign<TimingCore>(CACHE_LINE_BYTES, cores);
@@ -717,7 +718,7 @@ static void InitSystem(Config& config) {
                     assignedCaches[dcache]++;
 
                     //Build the core
-                    if (type == "Simple" || type == "ece562_BDI") {
+                    if (type == "Simple" || type == "BDI") {
                         core = new (&simpleCores[j]) SimpleCore(ic, dc, name);
                     } else if (type == "Timing") {
                         uint32_t domain = j*zinfo->numDomains/cores;
