@@ -83,6 +83,9 @@ uint64_t Cache::access(MemReq& req) {
 
     if (outputFile.is_open()) { // Check if the file opened successfully
 
+	// this is just outing the name. lol we can see which cache is acessing
+        outputFile <<  name.c_str() << std::endl;
+
     // this line is outputing the line address in hex. 0x is just so it has that before the hex number
     // std: hex is what is putting it in hex.
         outputFile << "Accessing address: 0x" << std::hex << (req.lineAddr << lineBits) << std::endl; // Write data to the file
