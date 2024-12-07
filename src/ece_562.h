@@ -101,7 +101,7 @@ class ece562_BDICache : public TimingCache {
 
         void dumpStats();
 
-        void initStats(AggregateStat* parentStat);
+        //void initStats(AggregateStat* parentStat);
         //void simulateHitWriteback(aHitWritebackEvent* ev, uint64_t cycle, HitEvent* he);
 
 protected:
