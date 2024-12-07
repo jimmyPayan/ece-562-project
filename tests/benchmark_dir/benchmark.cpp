@@ -1,3 +1,8 @@
+/*
+*   Compiling instructions:
+*   g++ benchmark.cpp -o benchmark
+*/
+
 #include <iostream>
 #include <chrono>
 
