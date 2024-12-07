@@ -88,7 +88,7 @@ extern void EndOfPhaseActions(); //in zsim.cpp
  */
 
 BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, uint32_t bankSize, bool isTerminal, uint32_t domain) {
-    string type = config.get<const char*>(prefix + "type", "Simple");
+    string type = config.get<const char*>(prefix + "type", "ece562_BDI");
     // Shortcut for TraceDriven type
     if (type == "TraceDriven") {
         assert(zinfo->traceDriven);
@@ -109,7 +109,9 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
     uint32_t candidates = (arrayType == "Z")? config.get<uint32_t>(prefix + "array.candidates", 16) : ways;
 
     //Need to know number of hash functions before instantiating array
-    if (arrayType == "SetAssoc" || arrayType == "ece562_BDI") {
+    if (arrayType == "ece562_BDI") {
+        numHashes = 1;
+    } else if (arrayType == "SetAssoc") {
         numHashes = 1;
     } else if (arrayType == "Z") {
         numHashes = ways;
@@ -278,7 +280,8 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
 
     // Inclusion?
     bool nonInclusiveHack = config.get<bool>(prefix + "nonInclusiveHack", false);
-    if (nonInclusiveHack) assert((type == "Simple" || type == "ece562_BDI") && !isTerminal);
+    //if (nonInclusiveHack) assert((type == "Simple" || type == "ece562_BDI") && !isTerminal);
+    if (nonInclusiveHack) assert((type == "ece562_BDI") && !isTerminal);
 
     // Finally, build the cache
     Cache* cache;
@@ -290,12 +293,15 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
     }
     rp->setCC(cc);
     if (!isTerminal) {
-        // if (type == "ece562_BDI") {
-        //     cache = new ece562_BDICache();
-        // }
-        if (type == "Simple" || type == "ece562_BDI") {
-            cache = new Cache(numLines, cc, array, rp, accLat, invLat, name);
-        } else if (type == "Timing") {
+        // Simple check nor required for ece562_BDI, different number of cores
+        //if (type == "Simple") {
+        //    cache = new Cache(numLines, cc, array, rp, accLat, invLat, name);
+        //}
+        if (type == "ece562_BDI") {
+             cache = new Cache(numLines, cc, array, rp, accLat, invLat, name);
+             //cache = new ece562_BDICache();
+        } 
+        else if (type == "Timing") {
             uint32_t mshrs = config.get<uint32_t>(prefix + "mshrs", 16);
             uint32_t tagLat = config.get<uint32_t>(prefix + "tagLat", 5);
             uint32_t timingCandidates = config.get<uint32_t>(prefix + "timingCandidates", candidates);
@@ -308,12 +314,14 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
             panic("Invalid cache type %s", type.c_str());
         }
     } else {
-        //Filter cache optimization: FIXME ECE
-        if (type != "Simple" && type != "ece562_BDI") panic("Terminal cache %s can only have type == Simple || ece562_BDI", name.c_str());
+        //Filter cache optimization: FIXME ECE COMPLETE
+        //if (type != "Simple" && type != "ece562_BDI") panic("Terminal cache %s can only have type == Simple || ece562_BDI", name.c_str());
+        if (type != "ece562_BDI") panic("Terminal cache %s can only have type == ece562_BDI", name.c_str());
         if (arrayType != "SetAssoc" || hashType != "None" || replType != "LRU") panic("Invalid FilterCache config %s", name.c_str());
         cache = new FilterCache(numSets, numLines, cc, array, rp, accLat, invLat, name);
     }
 
+    //Complete if required: FIXME ECE
     //also from Thesaurus init.cpp
     //cache = new ApproximateBDICache(numLines * tagRatio, numLines, cc, atagArray, adataArray, tagRP, dataRP,
     //    accLat, invLat, mshrs, ways, timingCandidates, domain, name, crStats, evStats, tutStats, dutStats, hitStats, missStats, allStats);
@@ -360,15 +368,19 @@ DDRMemory* BuildDDRMemory(Config& config, uint32_t lineSize, uint32_t frequency,
 }
 
 MemObject* BuildMemoryController(Config& config, uint32_t lineSize, uint32_t frequency, uint32_t domain, g_string& name) {
-    //Type
-    string type = config.get<const char*>("sys.mem.type", "Simple"); // ECE FIXME
+    //Type, defined as system memory type. Defaults to ece562_BDI due to core amount
+    string type = config.get<const char*>("sys.mem.type", "ece562_BDI");
 
     //Latency
     uint32_t latency = (type == "DDR")? -1 : config.get<uint32_t>("sys.mem.latency", 100);
 
     MemObject* mem = nullptr;
-    if (type == "Simple" || type == "ece562_BDI"){
+    //if (type == "Simple") {
+    //    mem = new SimpleMemory(latency, name);
+    //}
+    if (type == "ece562_BDI"){ // Need to create own ece562_BDIMemory method and class: FIXME ECE
         mem = new SimpleMemory(latency, name);
+        //mem = new ece562_BDIMemory(latency, name);
     } else if (type == "MD1") {
         // The following params are for MD1 only
         // NOTE: Frequency (in MHz) -- note this is a sys parameter (not sys.mem). There is an implicit assumption of having
@@ -660,7 +672,7 @@ static void InitSystem(Config& config) {
 
             string prefix = string("sys.cores.") + group + ".";
             uint32_t cores = config.get<uint32_t>(prefix + "cores", 1);
-            string type = config.get<const char*>(prefix + "type", "Simple"); //ECE FIXME
+            string type = config.get<const char*>(prefix + "type", "ece562_BDI"); //ECE FIXME COMPLETE
 
             //Build the core group
             union {
@@ -669,9 +681,15 @@ static void InitSystem(Config& config) {
                 OOOCore* oooCores;
                 NullCore* nullCores;
             };
-            if (type == "Simple" || type == "ece562_BDI") {
+            //if (type == "Simple") {
+            //    simpleCores = gm_memalign<SimpleCore>(CACHE_LINE_BYTES, cores);
+            //} else 
+            if (type == "ece562_BDI") { //Need to create ece562_BDIcores = gm_memalign...: FIXME ECE
                 simpleCores = gm_memalign<SimpleCore>(CACHE_LINE_BYTES, cores);
-            } else if (type == "Timing") {
+                //ece562_BDIcores = gm_memalign<ece562_BDICore>(CACHE_LINE_BYTES, cores);
+                //panic("%s: Core type check %s", group, type.c_str());
+            }
+            else if (type == "Timing") {
                 timingCores = gm_memalign<TimingCore>(CACHE_LINE_BYTES, cores);
             } else if (type == "OOO") {
                 oooCores = gm_memalign<OOOCore>(CACHE_LINE_BYTES, cores);
@@ -717,9 +735,15 @@ static void InitSystem(Config& config) {
                     assignedCaches[dcache]++;
 
                     //Build the core
-                    if (type == "Simple" || type == "ece562_BDI") {
+                    //if (type == "Simple") {
+                    //    core = new (&simpleCores[j]) SimpleCore(ic, dc, name);
+                    //} 
+                    if (type == "ece562_BDI") { //Need to create ece562_BDI new core: FIXME ECE
                         core = new (&simpleCores[j]) SimpleCore(ic, dc, name);
-                    } else if (type == "Timing") {
+                        //core = new (&ece562_BDICores[j]) ece562_BDICore(ic, dc, name);
+                        //panic("%s: Core group check %s", group, type.c_str());
+                    }
+                    else if (type == "Timing") {
                         uint32_t domain = j*zinfo->numDomains/cores;
                         TimingCore* tcore = new (&timingCores[j]) TimingCore(ic, dc, domain, name);
                         zinfo->eventRecorders[coreIdx] = tcore->getEventRecorder();
