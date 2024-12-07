@@ -14,7 +14,9 @@ echo "Error: Benchmark executable not found in $BENCHMARK_DIR."
 exit 1
 fi
 # Define an array of configuration files
-configs=("simple.cfg" "simple2.cfg")
+configs=("ece-562-simple.cfg")
+# configs=("ece-562-simple.cfg" "simple.cfg")
+
 # Loop through configurations and run benchmark for each
 for config in "${configs[@]}"; do
 config_path="$CONFIG_DIR/$config"
