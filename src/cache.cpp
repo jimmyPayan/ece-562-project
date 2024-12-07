@@ -33,13 +33,6 @@
 #include "ece_562.h"
 
 
-#include <iostream>
-#include <fstream>
-#include <iomanip>  // For std::setw and std::setfill
-#include <string>
-#include <random>
-#include <sstream>
-
 Cache::Cache(uint32_t _numLines, CC* _cc, CacheArray* _array, ReplPolicy* _rp, uint32_t _accLat, uint32_t _invLat, const g_string& _name)
     : cc(_cc), array(_array), rp(_rp), numLines(_numLines), accLat(_accLat), invLat(_invLat), name(_name) {}
 

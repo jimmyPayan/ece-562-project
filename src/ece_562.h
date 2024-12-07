@@ -79,7 +79,27 @@ public:
     void print();
 };
 
+class ece562_SimpleBDICache : public Cache {
+    protected:
+        uint32_t numTagLines;
+        uint32_t numDataLines;
+        
+        ece562_BDITagArray* tagArray;
+        ece562_BDIDataArray* dataArray;
 
+        ReplPolicy* tagRP;
+        ReplPolicy* dataRP;
+    
+    public:
+        uint64_t access(MemReq& req);
+        using Cache::Cache;
+        // ece562_SimpleBDICache(uint32_t _numTagLines, uint32_t _numDataLines, CC* _cc, ece562_BDITagArray* _tagArray, ece562_BDIDataArray* _dataArray, ReplPolicy* tagRP,
+        //     ReplPolicy* dataRP, uint32_t _accLat, uint32_t _invLat, uint32_t mshrs, uint32_t ways, uint32_t cands, uint32_t _domain, const g_string& _name)
+        //     :Cache(_numTagLines, _cc, NULL, tagRP, _accLat, _invLat, _name) {}
+        
+    protected:
+        //initCacheStats(AggregateStat* cacheStat);
+};
 
 class ece562_BDICache : public TimingCache {
     protected:

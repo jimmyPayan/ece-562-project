@@ -247,11 +247,11 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
 
     uint32_t tagRatio = config.get<uint32_t>(prefix + "tagRatio", 1);
 
-    if (arrayType == "ece562_BDI") {
+    if (arrayType == "BDI") {
         tagRP = new LRUReplPolicy<true>(numLines * tagRatio);
         //dataRP = new DataLRUReplPolicy(numLines);
         dataRP = new LRUReplPolicy<true>(numLines);
-        //tagArray = new ece562_BDITagArray(numLines * tagRatio, ways * tagRatio, ways, tagRP, hf);
+        //tagArray = new BDITagArray(numLines * tagRatio, ways * tagRatio, ways, tagRP, hf);
         dataArray = new ece562_BDIDataArray();
     }
     else if (arrayType == "SetAssoc") {
