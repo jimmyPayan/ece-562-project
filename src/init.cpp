@@ -238,18 +238,19 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
     CacheArray* array = nullptr;
 
     //added from Thesaurus init.cpp
-    //ece562_BDIDataArray* dataArray = nullptr;
-    //ece562_BDITagArray* tagArray = nullptr;
-    //ReplPolicy* tagRP = nullptr;
-    //ReplPolicy* dataRP = nullptr;
+    ece562_BDIDataArray* dataArray = nullptr;
+    ece562_BDITagArray* tagArray = nullptr;
+    ReplPolicy* tagRP = nullptr;
+    ReplPolicy* dataRP = nullptr;
+
     uint32_t tagRatio = config.get<uint32_t>(prefix + "tagRatio", 1);
 
     if (arrayType == "ece562_BDI") {
-        //tagRP = new LRUReplPolicy<true>(numLines * tagRatio);
+        tagRP = new LRUReplPolicy<true>(numLines * tagRatio);
         //dataRP = new DataLRUReplPolicy(numLines);
-        //dataRP = new LRUReplPolicy<true>(numLines);
+        dataRP = new LRUReplPolicy<true>(numLines);
         //tagArray = new ece562_BDITagArray(numLines * tagRatio, ways * tagRatio, ways, tagRP, hf);
-        //dataArray = new ece562_BDIDataArray();
+        dataArray = new ece562_BDIDataArray();
     }
     else if (arrayType == "SetAssoc") {
         array = new SetAssocArray(numLines, ways, rp, hf);
