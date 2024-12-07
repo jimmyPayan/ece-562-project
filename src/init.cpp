@@ -235,13 +235,6 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
 
 
     //Alright, build the array
-<<<<<<< HEAD
-    // ECE562: CHANGEME
-    ece562_BDIDataArray* ece562_dataArray = nullptr;
-    ece562_dataArray = new ece562_BDIDataArray();
-
-=======
->>>>>>> sg-changes
     CacheArray* array = nullptr;
 
     //added from Thesaurus init.cpp
@@ -312,11 +305,7 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
         }
     } else {
         //Filter cache optimization: FIXME ECE
-<<<<<<< HEAD
-        if (type != "Simple" && type != "ece562_BDI") panic("Terminal cache %s can only have type == Simple || BDI", name.c_str());
-=======
         if (type != "Simple" && type != "ece562_BDI") panic("Terminal cache %s can only have type == Simple || ece562_BDI", name.c_str());
->>>>>>> sg-changes
         if (arrayType != "SetAssoc" || hashType != "None" || replType != "LRU") panic("Invalid FilterCache config %s", name.c_str());
         cache = new FilterCache(numSets, numLines, cc, array, rp, accLat, invLat, name);
     }
