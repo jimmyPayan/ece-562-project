@@ -94,7 +94,7 @@ uint64_t Cache::access(MemReq& req) {
 //    	std::ofstream outputFile("cache_access_output.txt", std::ios::app); // Create an output file stream
 
 	if (outputFile.is_open()) { // Check if the file opened successfully
-
+		if(name.compare("l2-0") == 0){
         // this is just outing the name. lol we can see which cache is acessing
     	// this line is outputing the line address in hex. 0x is just so it has that before the hex number
     	// std: hex is what is putting it in hex.
@@ -111,7 +111,7 @@ uint64_t Cache::access(MemReq& req) {
             outputFile << std::hex << std::setfill('0') << std::setw(2) << static_cast<int>(byteData[i]) << " ";
         }
         outputFile << std::endl;  // End the line after the loop
-
+}
     }
     else {
         std::cerr << "Error opening the file!" << std::endl;
@@ -172,12 +172,12 @@ uint64_t Cache::access(MemReq& req) {
     cc->endAccess(req);
 
 	uint64_t access_lat = respCycle - temp;
-	if (outputFile.is_open()) {
-		outputFile << "access latency is " << std::dec << access_lat << " cycles." << std::endl;
-}
-else {
-	std::cerr << "Error opening the file!" << std::endl;
-}
+//	if (outputFile.is_open()) {
+//		outputFile << "access latency is " << std::dec << access_lat << " cycles." << std::endl;
+//}
+//else {
+//	std::cerr << "Error opening the file!" << std::endl;
+//}
     assert_msg(respCycle >= req.cycle, "[%s] resp < req? 0x%lx type %s childState %s, respCycle %ld reqCycle %ld",
             name.c_str(), req.lineAddr, AccessTypeName(req.type), MESIStateName(*req.state), respCycle, req.cycle);
     return respCycle;
