@@ -84,7 +84,9 @@ uint64_t Cache::access(MemReq& req) {
 
 	// temp for subtraction later
 	uint64_t temp = respCycle;
-	std::ofstream outputFile("cache_access_output.txt", std::ios::app); // Create an output file stream
+	std::ofstream outputFile("l2output.txt", std::ios::app); // Create an output file stream
+	std::ofstream myfile("l1ioutput.txt", std::ios::app);
+	std::ofstream urfile("l1doutput.txt", std::ios::app);
 	if (likely(!skipAccess)) {
         bool updateReplacement = (req.type == GETS) || (req.type == GETX);
         int32_t lineId = array->lookup(req.lineAddr, &req, updateReplacement);
@@ -116,7 +118,52 @@ uint64_t Cache::access(MemReq& req) {
     else {
         std::cerr << "Error opening the file!" << std::endl;
     }
+if (myfile.is_open()) { // Check if the file opened successfully
+		if(name.compare("l1i-0") == 0){
+        // this is just outing the name. lol we can see which cache is acessing
+    	// this line is outputing the line address in hex. 0x is just so it has that before the hex number
+    	// std: hex is what is putting it in hex.
+        myfile << name.c_str() << " is accessing address: 0x" << std::hex << (req.lineAddr << lineBits) << std::endl; // Write data to the file
 
+//	outputFile << "access latency is " << std::dec << accLat << " cycles." << std::endl;
+   	 // this is outputing the line size. no manipulation of it. just line size.
+        myfile << "line size: " << std::dec << (zinfo->lineSize) << std::endl;
+
+        // this is making a byte data array. basically, taking the existing data
+        uint8_t* byteData = (uint8_t*)data;
+        for (size_t i = 0; i < zinfo->lineSize; ++i) {
+            // writing it out in hex.
+            myfile << std::hex << std::setfill('0') << std::setw(2) << static_cast<int>(byteData[i]) << " ";
+        }
+        myfile << std::endl;  // End the line after the loop
+}
+    }
+    else {
+        std::cerr << "Error opening the file!" << std::endl;
+    }
+if (urfile.is_open()) { // Check if the file opened successfully
+		if(name.compare("l1d-0") == 0){
+        // this is just outing the name. lol we can see which cache is acessing
+    	// this line is outputing the line address in hex. 0x is just so it has that before the hex number
+    	// std: hex is what is putting it in hex.
+        urfile << name.c_str() << " is accessing address: 0x" << std::hex << (req.lineAddr << lineBits) << std::endl; // Write data to the file
+
+//	outputFile << "access latency is " << std::dec << accLat << " cycles." << std::endl;
+   	 // this is outputing the line size. no manipulation of it. just line size.
+        urfile << "line size: " << std::dec << (zinfo->lineSize) << std::endl;
+
+        // this is making a byte data array. basically, taking the existing data
+        uint8_t* byteData = (uint8_t*)data;
+        for (size_t i = 0; i < zinfo->lineSize; ++i) {
+            // writing it out in hex.
+            urfile << std::hex << std::setfill('0') << std::setw(2) << static_cast<int>(byteData[i]) << " ";
+        }
+        urfile << std::endl;  // End the line after the loop
+}
+    }
+    else {
+        std::cerr << "Error opening the file!" << std::endl;
+    }
         if (lineId == -1 && cc->shouldAllocate(req)) {
             //Make space for new line
             Address wbLineAddr;
