@@ -1,117 +1,141 @@
-#include "cache.h"
-#include "hash.h"
-#include "event_recorder.h"
-#include "timing_event.h"
-#include "zsim.h"
-
 #include "ece_562.h"
-#include <iostream>
-#include <fstream>
-#include <iomanip>  // For std::setw and std::setfill
-#include <string>
-#include <random>
-#include <sstream>
-#include <pin.H>
+#include "hash.h"
+#include "repl_policies.h"
 
-uint64_t ece562_SimpleBDICache::access(MemReq& req) {
-    uint64_t respCycle = req.cycle;
-    bool skipAccess = cc->startAccess(req); //may need to skip access due to races (NOTE: may change req.type!)
-    if (likely(!skipAccess)) {
-                // begin ECE 562 logging
-                // allocating space in memory for data. the data will be the size of the line size
-                DataLine data = gm_calloc<uint8_t>(zinfo->lineSize);
-                // DataType type = ZSIM_FLOAT; // comment out for now; only using 64-bit ints
-                PIN_SafeCopy(data, (void*)(req.lineAddr << lineBits), zinfo->lineSize);
-
-                // make & name file, open file stream. 
-                std::ofstream outputFile("cache_access_output.txt", std::ios::app);
-
-                if (outputFile.is_open()) { // Check if the file opened successfully
-
-                // this line is outputing the line address in hex. 0x is just so it has that before the hex number
-                // std: hex is what is putting it in hex.
-                    outputFile << "Accessing address: 0x" << std::hex << (req.lineAddr << lineBits) << std::endl; // Write data to the file
-
-                // this is outputing the line size. no manipulation of it. just line size.
-                    outputFile << std::hex << "line size: " << (zinfo->lineSize) << std::endl;
-
-                    // this is making a byte data array. basically, taking the existing data
-                    uint8_t* byteData = (uint8_t*)data;
-                    for (size_t i = 0; i < zinfo->lineSize; ++i) {
-                        // writing it out in hex.
-                        outputFile << std::hex << std::setfill('0') << std::setw(2) << static_cast<int>(byteData[i]) << " ";
-                    }
-                    outputFile << std::endl;  // End the line after the loop
-
-                }
-                else {
-                    std::cerr << "Error opening the file!" << std::endl;
-                }
-                // end ECE 562 logging    
-
-        bool updateReplacement = (req.type == GETS) || (req.type == GETX);
-        int32_t lineId = array->lookup(req.lineAddr, &req, updateReplacement);
-        respCycle += accLat;
-
-        if (lineId == -1 && cc->shouldAllocate(req)) {
-            //Make space for new line
-            Address wbLineAddr;
-            lineId = array->preinsert(req.lineAddr, &req, &wbLineAddr); //find the lineId to replace
-            trace(Cache, "[%s] Evicting 0x%lx", name.c_str(), wbLineAddr);
-
-            //Evictions are not in the critical path in any sane implementation -- we do not include their delays
-            //NOTE: We might be "evicting" an invalid line for all we know. Coherence controllers will know what to do
-            cc->processEviction(req, wbLineAddr, lineId, respCycle); //1. if needed, send invalidates/downgrades to lower level
-
-            array->postinsert(req.lineAddr, &req, lineId); //do the actual insertion. NOTE: Now we must split insert into a 2-phase thing because cc unlocks us.
-        }
-        // Enforce single-record invariant: Writeback access may have a timing
-        // record. If so, read it.
-        EventRecorder* evRec = zinfo->eventRecorders[req.srcId];
-        TimingRecord wbAcc;
-        wbAcc.clear();
-        if (unlikely(evRec && evRec->hasRecord())) {
-            wbAcc = evRec->popRecord();
-        }
-
-        respCycle = cc->processAccess(req, lineId, respCycle);
-
-        // Access may have generated another timing record. If *both* access
-        // and wb have records, stitch them together
-        if (unlikely(wbAcc.isValid())) {
-            if (!evRec->hasRecord()) {
-                // Downstream should not care about endEvent for PUTs
-                wbAcc.endEvent = nullptr;
-                evRec->pushRecord(wbAcc);
-            } else {
-                // Connect both events
-                TimingRecord acc = evRec->popRecord();
-                assert(wbAcc.reqCycle >= req.cycle);
-                assert(acc.reqCycle >= req.cycle);
-                DelayEvent* startEv = new (evRec) DelayEvent(0);
-                DelayEvent* dWbEv = new (evRec) DelayEvent(wbAcc.reqCycle - req.cycle);
-                DelayEvent* dAccEv = new (evRec) DelayEvent(acc.reqCycle - req.cycle);
-                startEv->setMinStartCycle(req.cycle);
-                dWbEv->setMinStartCycle(req.cycle);
-                dAccEv->setMinStartCycle(req.cycle);
-                startEv->addChild(dWbEv, evRec)->addChild(wbAcc.startEvent, evRec);
-                startEv->addChild(dAccEv, evRec)->addChild(acc.startEvent, evRec);
-
-                acc.reqCycle = req.cycle;
-                acc.startEvent = startEv;
-                // endEvent / endCycle stay the same; wbAcc's endEvent not connected
-                evRec->pushRecord(acc);
-            }
-        }
-    }
-
-    cc->endAccess(req);
-
-    assert_msg(respCycle >= req.cycle, "[%s] resp < req? 0x%lx type %s childState %s, respCycle %ld reqCycle %ld",
-            name.c_str(), req.lineAddr, AccessTypeName(req.type), MESIStateName(*req.state), respCycle, req.cycle);
-    return respCycle;
+uint64_t ece562_BDICache::access(MemReq& req) {
+    
 }
 
 void ece562_BDIDataArray::approximate(const DataLine data, DataType type) {
 
 }
+
+#if 0
+class ece562_BDITagArray {
+protected:
+    bool* approximateArray;
+    Address* tagArray;
+    int32_t* segmentPointerArray;// NOTE: doesn't actually reflect segmentPointer. It's just valid or invalid.
+    //BDICompressionEncoding* compressionEncodingArray;
+    ReplPolicy* rp;
+    HashFamily* hf;
+    uint32_t numLines;
+    uint32_t numSets;
+    uint32_t assoc;
+    uint32_t dataAssoc;
+    uint32_t setMask;
+    uint32_t validLines;
+    uint32_t dataValidSegments;
+
+public:
+    ece562_BDITagArray(uint32_t _numLines, uint32_t _assoc, uint32_t _dataAssoc, ReplPolicy* _rp, HashFamily* _hf);
+    ~ece562_BDITagArray();
+
+    // Returns the Index of the matching tag, or -1 if none found.
+    int32_t lookup(Address lineAddr, const MemReq* req, bool updateReplacement);
+
+    // Returns candidate Index for insertion, wbLineAddr will point to its address for eviction.
+    int32_t preinsert(Address lineAddr, const MemReq* req, Address* wbLineAddr);
+
+    // Returns candidate Index for insertion, wbLineAddr will point to its address for eviction, or -1 if none needed.
+    int32_t needEviction(Address lineAddr, const MemReq* req, uint16_t size, g_vector<uint32_t>& alreadyEvicted, Address* wbLineAddr);
+
+    // Actually inserts
+    //void postinsert(Address lineAddr, const MemReq* req, int32_t tagId, int8_t segmentId, BDICompressionEncoding compression, bool approximate, bool updateReplacement);
+
+    // returns compressionEncoding
+    //BDICompressionEncoding readCompressionEncoding(int32_t tagId);
+
+    //void writeCompressionEncoding(int32_t tagId, BDICompressionEncoding encoding);
+
+    // returns segmentPointer
+    //int8_t readSegmentPointer(int32_t tagId);
+
+    uint32_t getValidLines();
+    uint32_t countValidLines();
+    uint32_t getDataValidSegments();
+    uint32_t countDataValidSegments();
+    void initStats(AggregateStat* parent) {}
+    void print();
+};
+#endif
+
+// Returns the Index of the matching tag, or -1 if none found.
+int32_t ece562_BDITagArray::lookup(Address lineAddr, const MemReq* req, bool updateReplacement){
+    // find pointer to the first index of the line, assign to 'first'
+    uint32_t set = hf->hash(0, lineAddr) & setMask;
+    uint32_t first = set*assoc;
+
+    // iterate through lines which may have lineAddr. if lineAddr found, return the index where it is located.
+    for (uint32_t id = first; id < first + assoc; id++) {
+        if (tagArray[id] ==  lineAddr) {
+            if (updateReplacement) rp->update(id, req);
+            return id;
+        }
+    }
+    return -1;
+}
+
+// Returns candidate Index for insertion, wbLineAddr will point to its address for eviction.
+int32_t ece562_BDITagArray::preinsert(Address lineAddr, const MemReq* req, Address* wbLineAddr) {
+    // find pointer to the first index of the line, assign to 'first'
+    uint32_t set = hf->hash(0, lineAddr) & setMask;
+    uint32_t first = set*assoc;
+
+    // find the eviction candidate by index
+    uint32_t evictionIndex = rp->rankCands(req, SetAssocCands(first, first+assoc));
+    
+    // write to write-back line address, tell the cache where to preinsert
+    *wbLineAddr = tagArray[evictionIndex];
+    return evictionIndex;
+}
+
+// Returns candidate Index for insertion, wbLineAddr will point to its address for eviction, or -1 if none needed. size = size of data being inserted
+int32_t ece562_BDITagArray::needEviction(Address lineAddr, const MemReq* req, uint16_t size, g_vector<uint32_t>& alreadyEvicted, Address* wbLineAddr) {
+    // find pointer to the first index of the line, assign to 'first'
+    uint32_t set = hf->hash(0, lineAddr) & setMask;
+    uint32_t first = set*assoc;
+    uint16_t occupiedSpace = 0;
+
+    for (int id = first ; id < first + assoc ; id++) {
+        bool found = false;
+
+        // search for the line being evicted
+        for (int i = 0 ; i < alreadyEvicted.size() ; i++) {
+            if  (alreadyEvicted[i] == id) {
+                found = true;
+                break;
+            }
+        }
+
+        // check if line has been compressed and if the line has been found yet
+        if (segmentPointerArray[id] != -1 && found == false) {
+            occupiedSpace += checkCompression(compressionEncodingArray[id], zinfo->lineSize);
+        }
+    }
+
+    // lets the cache know no eviction required
+    if (dataAssoc*zinfo->lineSize - occupiedSpace >= size)
+        return -1;
+
+    // find the cache a good candidate to evict 
+    else {
+        uint32_t candidate = rp->rank(req, SetAssocCands(first, first+assoc), alreadyEvicted);
+        *wbLineAddr = tagArray[candidate];
+        return candidate;
+    }
+}
+
+// A boolean would work for current implementation, but makes additional deltas harder to implement.
+uint16_t checkCompression(BDICompressionEncoding encoding, uint32_t lineSize) {
+    switch(encoding) {
+        case EIGHTDELTAONE:
+        return 16;
+
+        case NONE:
+        default:
+        return lineSize;
+    }
+}
+
+

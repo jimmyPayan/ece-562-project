@@ -19,6 +19,10 @@
 typedef int64_t DataType;
 typedef void*   DataLine;
 
+typedef enum {
+    EIGHTDELTAONE,
+    NONE
+} BDICompressionEncoding;
 
 class ece562_BDIDataArray {
 protected:
@@ -36,8 +40,8 @@ protected:
     bool* approximateArray;
     Address* tagArray;
     int32_t* segmentPointerArray;// NOTE: doesn't actually reflect segmentPointer. It's just valid or invalid.
-    //BDICompressionEncoding* compressionEncodingArray;
-    ReplPolicy* rp;
+    BDICompressionEncoding* compressionEncodingArray;
+    LRUReplPolicy<true>* rp;
     HashFamily* hf;
     uint32_t numLines;
     uint32_t numSets;
@@ -48,7 +52,8 @@ protected:
     uint32_t dataValidSegments;
 
 public:
-    ece562_BDITagArray(uint32_t _numLines, uint32_t _assoc, uint32_t _dataAssoc, ReplPolicy* _rp, HashFamily* _hf);
+    ece562_BDITagArray(uint32_t _numLines, uint32_t _assoc, uint32_t _dataAssoc, LRUReplPolicy<true>* _rp, HashFamily* _hf)
+    :numLines(numLines), assoc(_assoc), dataAssoc(_dataAssoc), rp(_rp), hf(_hf) {}
     ~ece562_BDITagArray();
 
     // Returns the Index of the matching tag, or -1 if none found.
@@ -87,7 +92,8 @@ class ece562_SimpleBDICache : public Cache {
         ece562_BDITagArray* tagArray;
         ece562_BDIDataArray* dataArray;
 
-        ReplPolicy* tagRP;
+        // not quite sure why i need LRUReplPolicy<true>* but the compiler likes it
+        LRUReplPolicy<true>* tagRP;
         ReplPolicy* dataRP;
     
     public:
@@ -178,6 +184,7 @@ protected:
 #if 0
 tagRP = new LRUReplPolicy<true>(numLines*tagRatio);
 #endif
+
 /*
 * TagRP is initialized to be an LRUReplPolicy object, which accepts "numLines * TagRatio" as its argument.
 * This may correspond to the max compression ratio? If that is true, since we have 8DELTA1 compression, we would have a TagRatio of 4.
@@ -199,5 +206,8 @@ uint32_t rank(const MemReq* req, SetAssocCands cands, g_vector<uint32_t>& except
 class ece562_DataLRUReplPolicy : public ReplPolicy {
 
 };
+
+// Check if a line is compressed.
+uint16_t checkCompression(BDICompressionEncoding encoding, uint32_t lineSize);
 
 #endif  // ECE_562
