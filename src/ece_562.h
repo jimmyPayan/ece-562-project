@@ -20,7 +20,11 @@ typedef int64_t DataType;
 typedef void*   DataLine;
 
 typedef enum {
-    EIGHTDELTAONE,
+    ZERO,
+    BASE8DELTA0,
+    BASE8DELTA1,
+    BASE8DELTA2,
+    BASE8DELTA3,
     NONE
 } BDICompressionEncoding;
 
@@ -209,5 +213,7 @@ class ece562_DataLRUReplPolicy : public ReplPolicy {
 
 // Check if a line is compressed.
 uint16_t checkCompression(BDICompressionEncoding encoding, uint32_t lineSize);
+
+BDICompressionEncoding evaluateLine(int8_t* x86_64_cacheLine);
 
 #endif  // ECE_562

@@ -1,6 +1,8 @@
 #include "ece_562.h"
 #include "hash.h"
 #include "repl_policies.h"
+#include <cmath>
+#include <string>
 
 uint64_t ece562_BDICache::access(MemReq& req) {
     
@@ -129,13 +131,109 @@ int32_t ece562_BDITagArray::needEviction(Address lineAddr, const MemReq* req, ui
 // A boolean would work for current implementation, but makes additional deltas harder to implement.
 uint16_t checkCompression(BDICompressionEncoding encoding, uint32_t lineSize) {
     switch(encoding) {
-        case EIGHTDELTAONE:
+        case ZERO:
+        return 1;
+        case BASE8DELTA0:
+        return 8;
+        case BASE8DELTA1:
         return 16;
-
+        case BASE8DELTA2:
+        return 23;
+        case BASE8DELTA3:
+        return 30;
         case NONE:
         default:
         return lineSize;
     }
 }
+
+BDICompressionEncoding evaluateLine(DataLine data) {
+    int64_t* wordData = (int64_t*)data;
+    bool compressible = true;    
+
+    // zero packable
+    for (int i = 0 ; i < 8 ; i++) {
+        if (wordData[i] != 0) {
+            compressible = false;
+        }
+    }
+    
+    // 8 delta 0
+    if(compressible) return ZERO;
+    for (int i = 0 ; i < 8 ; i++) {
+        if (wordData[0] != wordData[i]) {
+            compressible = false;
+        }
+    }
+    if(compressible) return BASE8DELTA0;
+
+    // 8 delta 1
+    compressible = true;  
+    for (int i = 0 ; i < 8 ; i++) { //hardcoded 8 for now
+        if (abs(wordData[0] - wordData[i]) > 0xFF) {
+            compressible = false;
+        }
+    }
+    if(compressible) return BASE8DELTA1;
+
+    // 8 delta 2
+    compressible = true;  
+    for (int i = 0 ; i < 8 ; i++) {
+        if (abs(wordData[0] - wordData[i]) > 0xFFFF) {
+            compressible = false;
+        }
+    }
+    if(compressible) return BASE8DELTA2;
+
+    // 8 delta 3
+    compressible = true; 
+    for (int i = 0 ; i < 8 ; i++) {
+        if (abs(wordData[0] - wordData[i]) > 0xFFFFFF) {
+            compressible = false;
+        }
+    }
+    if(compressible) return BASE8DELTA3;
+}
+
+DataLine compressData(BDICompressionEncoding encoding, DataLine data) {
+    int64_t* wordData = (int64_t*)data;
+    
+    switch (encoding) {
+    // case ZERO:
+    //     //
+    //     break;
+    // case BASE8DELTA0:
+    //     //
+    //     break;
+    case BASE8DELTA1:
+    int8_t v[7];
+	
+	int64_t compressedData[2];
+	
+	compressedData[0] = wordData[0];
+	compressedData[1] = 0;
+	
+	for (int i = 0 ; i < 7 ; i++) {
+		v[i] = wordData[0] - wordData[i+1];	
+		compressedData[1] = (compressedData[1] << 8 | v[i]);
+	}
+	compressedData[1] = compressedData[1] << 8 | 0x00;
+    return compressedData;
+    break;
+    // case BASE8DELTA2:
+    //     //
+    //     break;
+    // case BASE8DELTA3:
+    //     //
+    //     break;
+    case NONE:
+    default:
+        return data;
+        break;
+    }    
+}
+
+
+
 
 
